@@ -164,7 +164,7 @@ vim.opt.scrolloff = 10
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>k', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -355,7 +355,7 @@ require('lazy').setup({
       { 'nvim-telescope/telescope-ui-select.nvim' },
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
-      { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
+      { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font, view = { min = 30, max = 50 } },
     },
     config = function()
       -- Telescope is a fuzzy finder that comes with a lot of different things that
@@ -404,7 +404,7 @@ require('lazy').setup({
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<C-p>', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -412,6 +412,15 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+
+      -- Own custom mappings
+      local function grep_in_directory()
+        local dir = vim.fn.input('Directory: ', '', 'dir')
+        require('telescope.builtin').live_grep { cwd = dir }
+      end
+
+      vim.keymap.set('n', '<leader>sf', grep_in_directory, { noremap = true, silent = true })
+      -- End Own mappings
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -586,6 +595,16 @@ require('lazy').setup({
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
           end
+
+          -- Own mappings
+          --
+          map('<leader>co', function()
+            vim.lsp.buf.code_action {
+              apply = true,
+              context = { only = { 'source.organizeImports' }, diagnostics = {} },
+            }
+          end, 'Organize Imports')
+          -- End own mappings
         end,
       })
 
@@ -685,7 +704,7 @@ require('lazy').setup({
     cmd = { 'ConformInfo' },
     keys = {
       {
-        '<leader>f',
+        '<leader>=',
         function()
           require('conform').format { async = true, lsp_format = 'fallback' }
         end,
@@ -717,7 +736,10 @@ require('lazy').setup({
         -- python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        scss = { 'prettierd', 'prettier', stop_after_first = true },
+        css = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -868,14 +890,14 @@ require('lazy').setup({
       --  - va)  - [V]isually select [A]round [)]paren
       --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
       --  - ci'  - [C]hange [I]nside [']quote
-      require('mini.ai').setup { n_lines = 500 }
+      -- require('mini.ai').setup { n_lines = 500 }
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
       --
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      -- require('mini.surround').setup()
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -948,6 +970,77 @@ require('lazy').setup({
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
+
+  -- Own plugins
+  --
+
+  -- Git related plugins
+  'tpope/vim-fugitive',
+  'tpope/vim-rhubarb',
+
+  -- Detect tabstop and shiftwidth automatically
+  'tpope/vim-sleuth',
+
+  'petertriho/nvim-scrollbar',
+  'mg979/vim-visual-multi',
+  -- {
+  --   "nvim-telescope/telescope-file-browser.nvim",
+  --   dependencies = { "nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim" }
+  -- },
+  'tpope/vim-surround',
+  -- 'sbdchd/neoformat',
+  'SidOfc/mkdx',
+  'vim-test/vim-test',
+  'nvim-tree/nvim-tree.lua',
+  'github/copilot.vim',
+  'yegappan/greplace',
+
+  {
+    'yetone/avante.nvim',
+    event = 'VeryLazy',
+    lazy = false,
+    version = false, -- set this if you want to always pull the latest change
+    opts = {
+      -- add any opts here
+    },
+    -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
+    build = 'make',
+    -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
+    dependencies = {
+      'stevearc/dressing.nvim',
+      'nvim-lua/plenary.nvim',
+      'MunifTanjim/nui.nvim',
+      --- The below dependencies are optional,
+      'hrsh7th/nvim-cmp', -- autocompletion for avante commands and mentions
+      'nvim-tree/nvim-web-devicons', -- or echasnovski/mini.icons
+      'zbirenbaum/copilot.lua', -- for providers='copilot'
+      -- {
+      --   -- support for image pasting
+      --   'HakonHarnes/img-clip.nvim',
+      --   event = 'VeryLazy',
+      --   opts = {
+      --     -- recommended settings
+      --     default = {
+      --       embed_image_as_base64 = false,
+      --       prompt_for_file_name = false,
+      --       drag_and_drop = {
+      --         insert_mode = true,
+      --       },
+      --       -- required for Windows users
+      --       use_absolute_path = true,
+      --     },
+      --   },
+      -- },
+      {
+        -- Make sure to set this up properly if you have lazy=true
+        'MeanderingProgrammer/render-markdown.nvim',
+        opts = {
+          file_types = { 'markdown', 'Avante' },
+        },
+        ft = { 'markdown', 'Avante' },
+      },
+    },
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
@@ -970,5 +1063,190 @@ require('lazy').setup({
   },
 })
 
+-- Own config
+vim.opt.autoread = true
+
+require('scrollbar').setup()
+
+vim.opt.iskeyword:append '-'
+
+vim.g['mkdx#settings'] = {
+  highlight = { enable = 1 },
+  enter = { shift = 1 },
+  links = { external = { enable = 1 } },
+  toc = { text = 'Table of Contents', update_on_write = 1 },
+  checkbox = { toggles = { ' ', '-', 'x' } },
+  fold = { enable = 1 },
+}
+
+-- Newlines on enter without insert mode
+vim.keymap.set('n', '<S-Enter>', 'O<Esc>', { noremap = true, silent = true })
+vim.keymap.set('n', '<CR>', 'o<Esc>', { noremap = true, silent = true })
+
+-- Clear highlights
+vim.keymap.set('n', '<ESC>', ':nohlsearch<CR>', { noremap = true, silent = true })
+
+-- Clear highlights
+vim.keymap.set('n', '<M-h>', '<C-W>h', { noremap = true, silent = true })
+vim.keymap.set('n', '<M-j>', '<C-W>j', { noremap = true, silent = true })
+vim.keymap.set('n', '<M-k>', '<C-W>k', { noremap = true, silent = true })
+vim.keymap.set('n', '<M-l>', '<C-W>l', { noremap = true, silent = true })
+
+-- Neoformat / prettier
+-- vim.keymap.set('n', '<Leader>=', ':Neoformat<CR>', { noremap = true, silent = true })
+
+vim.keymap.set('n', '<Leader>q', ':q<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>qw', ':e<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>w', ':w<CR>', { noremap = true, silent = true })
+
+-- Fugitive
+
+vim.keymap.set('n', '<Leader>g', ':Git<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>gb', ':Git blame<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>gp', ':Git push<CR>', { noremap = true, silent = true })
+
+-- Nvim tree
+local VIEW_WIDTH_FIXED = 30
+local view_width_max = VIEW_WIDTH_FIXED -- fixed to start
+
+-- toggle the width and redraw
+local function toggle_width_adaptive()
+  if view_width_max == -1 then
+    view_width_max = VIEW_WIDTH_FIXED
+  else
+    view_width_max = -1
+  end
+
+  require('nvim-tree.api').tree.reload()
+end
+-- get current view width
+local function get_view_width_max()
+  return view_width_max
+end
+
+require('nvim-tree').setup {
+  view = {
+    width = {
+      min = 30,
+      max = get_view_width_max,
+    },
+  },
+}
+vim.keymap.set('n', '<Leader>n', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', 'A', toggle_width_adaptive, { noremap = true, silent = true, desc = 'Toggle Adaptive Width' })
+
+-- Move between splits with <Leader> + HJKL
+vim.keymap.set('n', '<Leader>h', '<C-W>h', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>j', '<C-W>j', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>k', '<C-W>k', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>l', '<C-W>l', { noremap = true, silent = true })
+
+-- vim test
+
+-- let test#strategy = "dispatch"
+vim.g['test#strategy'] = 'neovim'
+
+vim.keymap.set('n', '<Leader>tr', ':TestNearest<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>tf', ':TestFile<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>ta', ':TestSuite<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<Leader>tt', ':TestLast<CR>', { noremap = true, silent = true })
+
+vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
+  pattern = { '*.txt' },
+  command = 'set filetype=markdown',
+})
+vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
+  pattern = { '*.html' },
+  command = 'set filetype=handlebars',
+})
+
+vim.api.nvim_create_autocmd('Filetype', {
+  pattern = { 'markdown' },
+  command = 'set formatprg=prettier\\ --parser\\ markdown',
+})
+vim.api.nvim_create_autocmd('Filetype', {
+  pattern = { 'handlebars' },
+  command = 'set formatprg=prettier\\ --parser\\ glimmer',
+})
+vim.api.nvim_create_autocmd('Filetype', {
+  pattern = { 'glimmer' },
+  command = 'set formatprg=prettier\\ --parser\\ glimmer',
+})
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = '*', -- or specify a file type like "lua", "python", etc.
+  callback = function()
+    vim.b.copilot_enabled = false
+  end,
+})
+
+vim.keymap.set('n', '<Leader>cp', function()
+  vim.b.copilot_enabled = true
+end, { noremap = true, desc = 'Turn on Co[p]ilot' })
+
+-- Termnal
+
+vim.keymap.set('n', '<leader>m', ':split | :term<CR>', { noremap = true, desc = 'Open diagnostic [Q]uickfix list' })
+
+local function get_package_name()
+  local package_path = vim.fn.getcwd() .. '/package.json'
+  if vim.fn.filereadable(package_path) == 1 then
+    local package_content = vim.fn.readfile(package_path)
+    if package_content then
+      local ok, package_data = pcall(vim.json.decode, table.concat(package_content, '\n'))
+      if ok and package_data.name then
+        return package_data.name
+      end
+    end
+  end
+  return nil
+end
+
+-- Function to set iTerm2 tab title
+local function set_iterm_title()
+  -- First try to get name from package.json
+  local title = get_package_name()
+
+  -- If no package.json or couldn't read name, use directory name
+  if not title then
+    -- Get current directory
+    local cwd = vim.fn.getcwd()
+    title = vim.fn.fnamemodify(cwd, ':t')
+  end
+
+  title = string.gsub(title, '(%a)%a*-+', '%1-')
+  -- Escape special characters in the title
+  local escaped_title = vim.fn.escape(title, '\\')
+
+  -- Set iTerm2 tab title using OSC escape sequence
+  -- OSC 1 sets the tab title
+  local title_seq = string.format('\027]1;%s\007', escaped_title)
+  io.stdout:write(title_seq)
+end
+
+-- Create an autocommand group
+local augroup = vim.api.nvim_create_augroup('ItermTitle', { clear = true })
+
+-- Set up autocmd for directory changes
+vim.api.nvim_create_autocmd({ 'DirChanged' }, {
+  group = augroup,
+  callback = set_iterm_title,
+})
+
+-- Set initial title when Neovim starts
+vim.api.nvim_create_autocmd({ 'VimEnter' }, {
+  group = augroup,
+  callback = set_iterm_title,
+})
+
+-- Reset title when exiting
+vim.api.nvim_create_autocmd({ 'VimLeave' }, {
+  group = augroup,
+  callback = function()
+    io.stdout:write '\027]1;\007'
+  end,
+})
+
+-- End own config
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
