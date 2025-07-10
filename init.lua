@@ -740,6 +740,12 @@ require('lazy').setup({
         typescript = { 'prettierd', 'prettier', stop_after_first = true },
         scss = { 'prettierd', 'prettier', stop_after_first = true },
         css = { 'prettierd', 'prettier', stop_after_first = true },
+        handlebars = { 'prettierd', 'prettier', stop_after_first = true },
+        yaml = { 'prettierd', 'prettier', stop_after_first = true },
+        json = { 'prettierd', 'prettier', stop_after_first = true },
+        terraform = { 'terraform_fmt' },
+        tf = { 'terraform_fmt' },
+        hcl = { 'terraform_fmt' },
       },
     },
   },
@@ -988,6 +994,7 @@ require('lazy').setup({
   --   dependencies = { "nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim" }
   -- },
   'tpope/vim-surround',
+  'tpope/vim-abolish',
   -- 'sbdchd/neoformat',
   'SidOfc/mkdx',
   'vim-test/vim-test',
@@ -1041,6 +1048,18 @@ require('lazy').setup({
       },
     },
   },
+  {
+    'swaits/zellij-nav.nvim',
+    lazy = true,
+    event = 'VeryLazy',
+    keys = {
+      { '<c-h>', '<cmd>ZellijNavigateLeftTab<cr>', { silent = true, desc = 'navigate left or tab' } },
+      { '<c-j>', '<cmd>ZellijNavigateDown<cr>', { silent = true, desc = 'navigate down' } },
+      { '<c-k>', '<cmd>ZellijNavigateUp<cr>', { silent = true, desc = 'navigate up' } },
+      { '<c-l>', '<cmd>ZellijNavigateRightTab<cr>', { silent = true, desc = 'navigate right or tab' } },
+    },
+    opts = {},
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
@@ -1064,6 +1083,9 @@ require('lazy').setup({
 })
 
 -- Own config
+
+vim.opt.swapfile = false
+
 vim.opt.autoread = true
 
 require('scrollbar').setup()
@@ -1081,16 +1103,27 @@ vim.g['mkdx#settings'] = {
 
 -- Newlines on enter without insert mode
 vim.keymap.set('n', '<S-Enter>', 'O<Esc>', { noremap = true, silent = true })
-vim.keymap.set('n', '<CR>', 'o<Esc>', { noremap = true, silent = true })
+
+-- Create a normal Enter mapping that excludes special buffers
+vim.keymap.set('n', '<CR>', function()
+  local buftype = vim.bo.buftype
+  if buftype == 'quickfix' or buftype == 'prompt' or buftype == 'nofile' then
+    -- Use default behavior in special buffers
+    return '<CR>'
+  else
+    -- Use your custom behavior in normal buffers
+    return 'o<Esc>'
+  end
+end, { expr = true, noremap = true, silent = true })
 
 -- Clear highlights
 vim.keymap.set('n', '<ESC>', ':nohlsearch<CR>', { noremap = true, silent = true })
 
 -- Clear highlights
-vim.keymap.set('n', '<M-h>', '<C-W>h', { noremap = true, silent = true })
-vim.keymap.set('n', '<M-j>', '<C-W>j', { noremap = true, silent = true })
-vim.keymap.set('n', '<M-k>', '<C-W>k', { noremap = true, silent = true })
-vim.keymap.set('n', '<M-l>', '<C-W>l', { noremap = true, silent = true })
+-- vim.keymap.set('n', '<M-h>', '<C-W>h', { noremap = true, silent = true })
+-- vim.keymap.set('n', '<M-j>', '<C-W>j', { noremap = true, silent = true })
+-- vim.keymap.set('n', '<M-k>', '<C-W>k', { noremap = true, silent = true })
+-- vim.keymap.set('n', '<M-l>', '<C-W>l', { noremap = true, silent = true })
 
 -- Neoformat / prettier
 -- vim.keymap.set('n', '<Leader>=', ':Neoformat<CR>', { noremap = true, silent = true })
@@ -1133,18 +1166,27 @@ require('nvim-tree').setup {
   },
 }
 vim.keymap.set('n', '<Leader>n', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
-vim.keymap.set('n', 'A', toggle_width_adaptive, { noremap = true, silent = true, desc = 'Toggle Adaptive Width' })
+vim.keymap.set('n', '<Leader>na', toggle_width_adaptive, { noremap = true, silent = true, desc = 'Toggle Adaptive Width' })
 
--- Move between splits with <Leader> + HJKL
-vim.keymap.set('n', '<Leader>h', '<C-W>h', { noremap = true, silent = true })
-vim.keymap.set('n', '<Leader>j', '<C-W>j', { noremap = true, silent = true })
-vim.keymap.set('n', '<Leader>k', '<C-W>k', { noremap = true, silent = true })
-vim.keymap.set('n', '<Leader>l', '<C-W>l', { noremap = true, silent = true })
+-- Move between splits with <Alt> + HJKL
+vim.keymap.set('n', 'M-h', '<C-W>h', { noremap = true, silent = true })
+vim.keymap.set('n', 'M-j', '<C-W>j', { noremap = true, silent = true })
+vim.keymap.set('n', 'M-k', '<C-W>k', { noremap = true, silent = true })
+vim.keymap.set('n', 'M-l', '<C-W>l', { noremap = true, silent = true })
 
 -- vim test
 
+function ZellijStrategy(cmd)
+  os.execute('zellij run -d right -- bash -c "' .. cmd .. ' && read -n 1 <&0"')
+end
+
 -- let test#strategy = "dispatch"
-vim.g['test#strategy'] = 'neovim'
+-- vim.g['test#strategy'] = 'neovim'
+
+vim.g['test#custom_strategies'] = {
+  zellij = ZellijStrategy,
+}
+vim.g['test#strategy'] = 'zellij'
 
 vim.keymap.set('n', '<Leader>tr', ':TestNearest<CR>', { noremap = true, silent = true })
 vim.keymap.set('n', '<Leader>tf', ':TestFile<CR>', { noremap = true, silent = true })
@@ -1186,7 +1228,7 @@ end, { noremap = true, desc = 'Turn on Co[p]ilot' })
 
 -- Termnal
 
-vim.keymap.set('n', '<leader>m', ':split | :term<CR>', { noremap = true, desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>m', ':split | :term<CR>', { noremap = true, desc = 'Open ter[m]inal' })
 
 local function get_package_name()
   local package_path = vim.fn.getcwd() .. '/package.json'
@@ -1203,7 +1245,7 @@ local function get_package_name()
 end
 
 -- Function to set iTerm2 tab title
-local function set_iterm_title()
+local function set_tab_title()
   -- First try to get name from package.json
   local title = get_package_name()
 
@@ -1222,6 +1264,7 @@ local function set_iterm_title()
   -- OSC 1 sets the tab title
   local title_seq = string.format('\027]1;%s\007', escaped_title)
   io.stdout:write(title_seq)
+  vim.fn.system('zellij action rename-tab "' .. title .. '"')
 end
 
 -- Create an autocommand group
@@ -1230,13 +1273,13 @@ local augroup = vim.api.nvim_create_augroup('ItermTitle', { clear = true })
 -- Set up autocmd for directory changes
 vim.api.nvim_create_autocmd({ 'DirChanged' }, {
   group = augroup,
-  callback = set_iterm_title,
+  callback = set_tab_title,
 })
 
 -- Set initial title when Neovim starts
 vim.api.nvim_create_autocmd({ 'VimEnter' }, {
   group = augroup,
-  callback = set_iterm_title,
+  callback = set_tab_title,
 })
 
 -- Reset title when exiting
