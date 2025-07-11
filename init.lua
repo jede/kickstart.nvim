@@ -1043,6 +1043,7 @@ require('lazy').setup({
   'nvim-tree/nvim-tree.lua',
   'github/copilot.vim',
   'yegappan/greplace',
+  'uga-rosa/ccc.nvim',
 
   {
     'yetone/avante.nvim',
@@ -1268,6 +1269,21 @@ vim.keymap.set('n', '<Leader>cp', function()
   vim.b.copilot_enabled = true
 end, { noremap = true, desc = 'Turn on Co[p]ilot' })
 
+-- Enable true color
+vim.opt.termguicolors = true
+
+local ccc = require 'ccc'
+-- local mapping = ccc.mapping
+
+ccc.setup {
+  -- Your preferred settings
+  -- Example: enable highlighter
+  highlighter = {
+    auto_enable = true,
+    lsp = true,
+  },
+}
+
 -- Termnal
 
 vim.keymap.set('n', '<leader>m', ':split | :term<CR>', { noremap = true, desc = 'Open ter[m]inal' })
@@ -1302,11 +1318,9 @@ local function set_tab_title()
   -- Escape special characters in the title
   local escaped_title = vim.fn.escape(title, '\\')
 
-  -- Set iTerm2 tab title using OSC escape sequence
-  -- OSC 1 sets the tab title
-  local title_seq = string.format('\027]1;%s\007', escaped_title)
-  io.stdout:write(title_seq)
-  vim.fn.system('zellij action rename-tab "' .. title .. '"')
+  -- set zellij tab title
+
+  os.execute('zellij action rename-tab "' .. escaped_title .. '"')
 end
 
 -- Create an autocommand group
